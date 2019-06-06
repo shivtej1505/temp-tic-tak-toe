@@ -1,0 +1,152 @@
+<html>
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+  <!-- <script src="/javascript/tictactoe.js"></script> -->
+  <style>
+    .ticTacToeBox,.row
+    {
+    /* border: 1px solid black; */
+  }
+  .box{
+    border: 1px solid black;
+    width:20px;
+    height:20px;
+  }</style>
+</head>
+<body>
+  <div style="margin:100px;">
+    <div class="jumbotron"  style="padding:40px;">
+      <h1>Tic Tac Toe</h1>
+      <div class="ticTacToeBox">
+            <div class="row">
+                <div data-x=0 data-y=0 class="col-md-2 box "></div>
+                <div data-x=0 data-y=1 class="col-md-2 box"></div>
+                <div data-x=0 data-y=2 class="col-md-2 box"></div>
+            </div> 
+            <div class="row">
+                    <div data-x=1 data-y=0 class="col-md-2 box"></div>
+                    <div data-x=1 data-y=1 class="col-md-2 box"></div>
+                    <div data-x=1 data-y=2 class="col-md-2 box"></div>
+                </div> 
+                <div class="row">
+                        <div data-x=2 data-y=0 class="col-md-2 box"></div>
+                        <div data-x=2 data-y=1 class="col-md-2 box"></div>
+                        <div data-x=2 data-y=2 class="col-md-2 box"></div>
+                    </div> 
+                    </div>
+    </div>
+  </div>
+  <script>
+    var ticTacToeJson=null;
+    var freezeUser = true;
+     var userPlayer = location.search.replace('?', '').split('=');
+if (userPlayer && userPlayer[0] === 'user' && userPlayer[1] === '1' || userPlayer[1] === '2') {
+    var player = userPlayer[1];
+    if(player==="1")
+    freezeUser=false;
+    fetchData();
+    setInterval(fetchData, 500);
+    attachEvents();
+} else {
+    alert('not a valid user');
+}
+
+function attachEvents() {
+
+    var allrowColumn = document.querySelectorAll('div[data-x][data-y]');
+    allrowColumn.forEach(rowColumn => {
+        (rowColumn.addEventListener('click', setTicToe));
+    })
+
+    function setTicToe(event) {
+        if(freezeUser){
+          alert('not allowed to tic');
+          return;
+        }
+        if (event.target.innerText.length) {
+            alert('already selected');
+            return;
+        }
+        var x = event.target.dataset.x;
+        var y = event.target.dataset.y;
+
+        setTicToeData(x, y, player);
+    }
+
+}
+
+function setTicToeData(x,y,user){
+  fetch('./setTic?x='+x+'&y='+y+'&user='+user)
+  .then(function (response) {
+                if (response.status !== 200) {
+                    console.log('Looks like there was a problem. Status Code: ' +
+                        response.status);
+                    return;
+                }
+                response.json().then(function (data) {
+                    if(data.success){
+                      setTicForUser(x,y,user);
+                      ticTacToeJson[Number(x)][Number(y)]=''+(user);
+                      freezeUser=true;
+                    }
+                });
+            });
+}
+function fetchData() {
+    fetch('./getData')
+        .then(
+            function (response) {
+                if (response.status !== 200) {
+                    console.log('Looks like there was a problem. Status Code: ' +
+                        response.status);
+                    return;
+                }
+                // Examine the text in the response
+                response.json().then(function (data) {
+                    buildData(JSON.parse((data)));
+                });
+            }
+        )
+        .catch(function (err) {
+            console.log('Fetch Error :-S', err);
+        });
+
+}
+
+function setTicForUser(x,y,user){
+  var el = document.querySelector('div[data-x="' + x + '"][data-y="' + y + '"]');
+if (user == '1')
+                el.innerText = 'x';
+            else
+                el.innerText = 'o';
+}
+function buildData(data) {
+  ticTacToeJson=data;
+  var p1Count=0;
+  var p2Count=0;
+    for (var i = 0; i < data.length; i++) {
+        var rowData = data[i];
+        for (var j = 0; j < data[i].length; j++) {
+            var column = data[i][j];
+            if(column===1) p1Count++;
+            if(column===2) p2Count++;
+            if(column)
+            setTicForUser(i,j,column);
+
+        }
+    }
+
+    // let winner = checkWinner(data);
+    if(p1Count===p2Count && userPlayer[1]==='1'){
+     freezeUser = false;
+    } else if(p1Count!=p2Count && userPlayer[1]==='2'){
+      freezeUser = false;
+    }
+    else freezeUser = true
+}
+  </script>
+</body>
+</html>
